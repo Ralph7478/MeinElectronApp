@@ -1,0 +1,19 @@
+my-electron-vite-app/
+├── package.json
+├── vite.config.ts
+├── tsconfig.json                # (für das Frontend)
+├── tsconfig.node.json           # (optional, für Node/Electron)
+├── node_modules/
+├── index.html                   # (von Vite/React genutzt)
+├── main/                        # Electron-Main-Prozess (TypeScript)
+│   ├── main.ts
+│   ├── preload.ts
+│   └── tsconfig.json            # (nur für main/)
+├── dist/                        # Build-Output (wird automatisch erzeugt)
+│   ├── main/                    # kompiliertes Electron-Main
+│   └── ...                      # Frontend-Build von Vite
+├── src/                         # Frontend (React + TypeScript + Vite)
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── ...                      # weitere Komponenten und Dateien
+└── README.md
