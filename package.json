@@ -5,8 +5,8 @@
   "author": "Dein Name",
   "main": "dist/main/main.js",
   "scripts": {
-    "tsc": "npx tsc -p main/",
-    "build": "npx tsc -p main/ && npx vite build",
+    "tsc": "npx tsc",
+    "build": "npx tsc && npx vite build",
     "dev": "concurrently \"vite\" \"npm:electron\"",
     "start": "npm run build && npx electron .",
     "electron": "wait-on tcp:5173 && electron .",
