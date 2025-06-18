@@ -1,4 +1,4 @@
-//main/main.ts
+//src/main/main.ts
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 
