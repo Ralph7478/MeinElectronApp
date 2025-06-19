@@ -1,4 +1,3 @@
-# Automatische Zeilenendungen je nach Plattform (LF auf Unix/macOS, CRLF auf Windows)
 * text=auto
 
 # Optional: Erzwinge Unix-Zeilenenden für bestimmte Dateien (z. B. für Web-Projekte)
@@ -9,3 +8,4 @@
 *.html  text eol=lf
 *.md    text eol=lf
 *.json  text eol=lf
+.gitattributes text eol=lf

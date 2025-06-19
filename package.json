@@ -10,9 +10,10 @@
     "dev": "concurrently \"vite\" \"npm:electron\"",
     "start": "npm run build && npx electron .",
     "electron": "wait-on tcp:5173 && electron .",
-    "dist": "npm run build && electron-builder",
+    "dist": "npm run build && electron-builder --publish never",
     "sign": "buildtools/signtool/signtool.exe sign /a /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 \"dist/MeinElectronApp.exe\"",
-    "dist-sign": "npm run dist && npm run sign"
+    "dist-sign": "npm run dist && npm run sign",
+    "commit": "git add -A && git commit -m \"Update\""
   },
   "dependencies": {
     "react": "^18.0.0",
@@ -44,6 +45,7 @@
     "win": {
       "target": "nsis",
       "icon": "assets/app-icon.ico"
-    }
+    },
+    "publish": []
   }
 }

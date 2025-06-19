@@ -1,13 +1,14 @@
+//./tsconfig.json
 {
   "compilerOptions": {
     "target": "ES2022",
     "module": "CommonJS",
-    "outDir": "../dist/main",
-    "rootDir": ".",
+    "outDir": "dist/main",         // <-- Korrigiert!
+    "rootDir": "src/main",         // <-- Nur den Main-Prozess! (empfohlen)
     "strict": true,
     "esModuleInterop": true,
     "types": ["electron"],
     "skipLibCheck": true
   },
-  "include": ["**/*.ts"]
+  "include": ["src/main/**/*.ts"]  // <-- Nur Main-Prozess inkludieren!
 }
