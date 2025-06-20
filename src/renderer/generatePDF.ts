@@ -1,5 +1,4 @@
 //generatePDF.ts
-import { useDataContext } from './DataContext';
 import pdfMake from "pdfmake/build/pdfmake";
 
 function formatEuro(value) {
@@ -46,8 +45,7 @@ function formatEndToEndId(text) {
   return text ? text.slice(0, 35) : '';
 }
 
-export function generatePDF(totalAmount?: number, showNotification?: (msg: string, type?: 'error'|'info'|'success'|'warning') => void) {
-  const { workbookData, configData } = useDataContext();
+export function generatePDF(workbookData: any[], configData: any, totalAmount?: number, showNotification?: (msg: string, type?: 'error'|'info'|'success'|'warning') => void) {
   if (!workbookData || !configData) {
     showNotification && showNotification('Bitte Excel-Datei zuerst laden.', 'error');
     return;

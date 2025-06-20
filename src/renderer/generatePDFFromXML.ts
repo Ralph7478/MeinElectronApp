@@ -1,5 +1,4 @@
 import pdfMake from "pdfmake/build/pdfmake";
-import { useDataContext } from './DataContext';
 
 function formatEuro(value) {
   let num = parseFloat(String(value).replace(',', '.'));

@@ -1,5 +1,4 @@
 // generateXML.ts Version 7 - Verbesserte & ZKA 3.8-konforme Version
-import { useDataContext } from './DataContext';
 declare global {
   interface Window {
     vkbeautifyforZKA38: any;
@@ -22,8 +21,7 @@ function getLocalISODateTimeString() {
   );
 }
 
-export function generateXML(showNotification?: (msg: string, type?: 'error'|'info'|'success'|'warning') => void, setXmlOutput?: (xml: string) => void) {
-  const { workbookData, configData } = useDataContext();
+export function generateXML(workbookData: any[], configData: any, showNotification?: (msg: string, type?: 'error'|'info'|'success'|'warning') => void, setXmlOutput?: (xml: string) => void) {
   if (!Array.isArray(workbookData) || !configData) {
     showNotification && showNotification('Bitte Excel-Datei zuerst laden.', 'error');
     return;

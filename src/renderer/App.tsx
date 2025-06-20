@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import * as XLSX from "xlsx";
 import PDFButton from '../components/PDFButton';
-import { DataProvider } from './DataContext';
 import Notification from './Notification';
 import { downloadXML, generateXML } from './generateXML';
 import { generatePDFFromXML } from './generatePDFFromXML';
 import './App.css';
+import './vkbeautifyforZKA38';
 
 // --- Hilfsfunktionen ---
 function zkaReplaceUmlauts(str: string): string {
@@ -259,7 +259,7 @@ const App: React.FC = () => {
   };
 
   const handleGenerateXML = () => {
-    generateXML(showNotification, setXmlOutput);
+    generateXML(workbookData, configData, showNotification, setXmlOutput);
   };
 
   const handleFormatXML = () => {
@@ -275,42 +275,40 @@ const App: React.FC = () => {
   };
 
   return (
-    <DataProvider>
-      <div className="responsive-app">
-        <Notification
-          message={notification.message}
-          type={notification.type}
-          onClose={() => setNotification({message: ''})}
-        />
-        <h1>ZKA 3.8 SEPA Sammelüberweisung</h1>
+    <div className="responsive-app">
+      <Notification
+        message={notification.message}
+        type={notification.type}
+        onClose={() => setNotification({message: ''})}
+      />
+      <h1>ZKA 3.8 SEPA Sammelüberweisung</h1>
 
-        <p><b>BLZ-BIC-Datei (blzToBics.json) auswählen:</b></p>
-        <input type="file" accept=".json" onChange={onBlzFileChange} />
+      <p><b>BLZ-BIC-Datei (blzToBics.json) auswählen:</b></p>
+      <input type="file" accept=".json" onChange={onBlzFileChange} />
 
-        <p>
-          Bitte eine Excel-Datei mit den Tabellen <strong>"Überweisungen"</strong> und <strong>"Konfiguration"</strong> auswählen:
-        </p>
-        <input type="file" accept=".xlsx" onChange={onExcelFileChange} />
+      <p>
+        Bitte eine Excel-Datei mit den Tabellen <strong>"Überweisungen"</strong> und <strong>"Konfiguration"</strong> auswählen:
+      </p>
+      <input type="file" accept=".xlsx" onChange={onExcelFileChange} />
 
-        <p>Optional: Vorhandene XML-Datei laden für PDF-Protokoll:</p>
-        <input type="file" accept=".xml" onChange={onXmlFileChange} />
+      <p>Optional: Vorhandene XML-Datei laden für PDF-Protokoll:</p>
+      <input type="file" accept=".xml" onChange={onXmlFileChange} />
 
-        <div className="button-row">
-          <button onClick={handleGenerateXML}>XML generieren</button>
-          <button onClick={() => downloadXML(xmlOutput, showNotification)}>
-            XML herunterladen
-          </button>
-          <PDFButton totalAmount={totalAmount} showNotification={showNotification} />
-          <button onClick={() => generatePDFFromXML(xmlOutput, showNotification)}>PDF aus XML</button>
-          <button onClick={handleFormatXML}>XML formatiert</button>
-        </div>
-
-        <h2>Generiertes XML:</h2>
-        <textarea value={xmlOutput} readOnly style={{ width: "100%", height: "300px", whiteSpace: "pre", fontFamily: "monospace", marginBottom: "1em" }} />
-
-        {message && <div style={{ whiteSpace: "pre", color: "darkred", marginTop: "1em" }}>{message}</div>}
+      <div className="button-row">
+        <button onClick={handleGenerateXML}>XML generieren</button>
+        <button onClick={() => downloadXML(xmlOutput, showNotification)}>
+          XML herunterladen
+        </button>
+        <PDFButton workbookData={workbookData} configData={configData} totalAmount={totalAmount} showNotification={showNotification} />
+        <button onClick={() => generatePDFFromXML(xmlOutput, showNotification)}>PDF aus XML</button>
+        <button onClick={handleFormatXML}>XML formatiert</button>
       </div>
-    </DataProvider>
+
+      <h2>Generiertes XML:</h2>
+      <textarea value={xmlOutput} readOnly style={{ width: "100%", height: "300px", whiteSpace: "pre", fontFamily: "monospace", marginBottom: "1em" }} />
+
+      {message && <div style={{ whiteSpace: "pre", color: "darkred", marginTop: "1em" }}>{message}</div>}
+    </div>
   );
 };
 
