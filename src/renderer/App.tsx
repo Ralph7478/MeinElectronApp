@@ -3,7 +3,8 @@ import * as XLSX from "xlsx";
 import PDFButton from '../components/PDFButton';
 import { DataProvider } from './DataContext';
 import Notification from './Notification';
-import { downloadXML } from './generateXML';
+import { downloadXML, generateXML } from './generateXML';
+import { generatePDFFromXML } from './generatePDFFromXML';
 import './App.css';
 
 // --- Hilfsfunktionen ---
@@ -42,19 +43,6 @@ function isValidBIC(bic: string): boolean {
 
 function getBICCountry(bic: string): string {
   return bic.trim().substring(4, 6);
-}
-
-function generateXML(data: any[], config: any): string {
-  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<SEPA>';
-  data.forEach((row, i) => {
-    xml += `\n  <Ueberweisung nr="${i + 1}">`;
-    Object.entries(row).forEach(([k, v]) => {
-      xml += `\n    <${k}>${String(v).replace(/[<>&]/g, '')}</${k}>`;
-    });
-    xml += "\n  </Ueberweisung>";
-  });
-  xml += "\n</SEPA>";
-  return xml;
 }
 
 // --- Hauptkomponente ---
@@ -271,13 +259,7 @@ const App: React.FC = () => {
   };
 
   const handleGenerateXML = () => {
-    if (!workbookData.length || !configData) {
-      setMessage("Bitte zuerst eine gültige Excel-Datei laden!");
-      return;
-    }
-    const xml = generateXML(workbookData, configData);
-    setXmlOutput(xml);
-    setMessage("XML generiert.");
+    generateXML(showNotification, setXmlOutput);
   };
 
   const handleFormatXML = () => {
@@ -295,6 +277,11 @@ const App: React.FC = () => {
   return (
     <DataProvider>
       <div className="responsive-app">
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification({message: ''})}
+        />
         <h1>ZKA 3.8 SEPA Sammelüberweisung</h1>
 
         <p><b>BLZ-BIC-Datei (blzToBics.json) auswählen:</b></p>
@@ -314,7 +301,7 @@ const App: React.FC = () => {
             XML herunterladen
           </button>
           <PDFButton totalAmount={totalAmount} showNotification={showNotification} />
-          <button disabled>PDF aus XML</button>
+          <button onClick={() => generatePDFFromXML(xmlOutput, showNotification)}>PDF aus XML</button>
           <button onClick={handleFormatXML}>XML formatiert</button>
         </div>
 
@@ -322,11 +309,6 @@ const App: React.FC = () => {
         <textarea value={xmlOutput} readOnly style={{ width: "100%", height: "300px", whiteSpace: "pre", fontFamily: "monospace", marginBottom: "1em" }} />
 
         {message && <div style={{ whiteSpace: "pre", color: "darkred", marginTop: "1em" }}>{message}</div>}
-        <Notification
-          message={notification.message}
-          type={notification.type}
-          onClose={() => setNotification({message: ''})}
-        />
       </div>
     </DataProvider>
   );

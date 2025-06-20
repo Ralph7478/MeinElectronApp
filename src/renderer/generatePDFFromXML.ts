@@ -129,7 +129,7 @@ export function generatePDFFromXML(xmlString: string, showNotification?: (msg: s
     { text: '', style: 'tableHeader' },
     { text: '', style: 'tableHeader' },
     { text: 'Summe:', style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] },
-    { text: '', style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] }
+    { text: formatEuro(summe), style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] }
   ]);
 
   const docDefinition = {
