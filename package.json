@@ -16,6 +16,7 @@
     "commit": "git add -A && git commit -m \"Update\""
   },
   "dependencies": {
+    "pdfmake": "^0.2.20",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "xlsx": "^0.18.5"
