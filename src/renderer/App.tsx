@@ -1,5 +1,10 @@
 import React, { useState } from "react";
 import * as XLSX from "xlsx";
+import PDFButton from '../components/PDFButton';
+import { DataProvider } from './DataContext';
+import Notification from './Notification';
+import { downloadXML } from './generateXML';
+import './App.css';
 
 // --- Hilfsfunktionen ---
 function zkaReplaceUmlauts(str: string): string {
@@ -61,6 +66,11 @@ const App: React.FC = () => {
   const [blzToBics, setBlzToBics] = useState<Record<string, any>>({});
   const [xmlOutput, setXmlOutput] = useState<string>("");
   const [message, setMessage] = useState<string>("");
+  const [notification, setNotification] = useState<{message: string, type?: 'error'|'info'|'success'|'warning'}>({message: ''});
+
+  const showNotification = (message: string, type: 'error'|'info'|'success'|'warning' = 'info') => {
+    setNotification({ message, type });
+  };
 
   const onBlzFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -270,35 +280,68 @@ const App: React.FC = () => {
     setMessage("XML generiert.");
   };
 
+  const handleFormatXML = () => {
+    const xmlText = xmlOutput;
+    // @ts-ignore
+    if (window.vkbeautifyforZKA38 && typeof window.vkbeautifyforZKA38.xml_zka38 === 'function') {
+      const formatted = window.vkbeautifyforZKA38.xml_zka38(xmlText);
+      setXmlOutput(formatted);
+      setMessage('XML formatiert (ZKA3.8)');
+    } else {
+      setMessage('vkbeautifyforZKA38 nicht geladen!');
+    }
+  };
+
   return (
-    <div style={{ fontFamily: "sans-serif", margin: "2em", background: "#f9f9f9", color: "#333" }}>
-      <h1>ZKA 3.8 SEPA Sammelüberweisung</h1>
+    <DataProvider>
+      <div className="responsive-app">
+        <h1>ZKA 3.8 SEPA Sammelüberweisung</h1>
 
-      <p><b>BLZ-BIC-Datei (blzToBics.json) auswählen:</b></p>
-      <input type="file" accept=".json" onChange={onBlzFileChange} />
+        <p><b>BLZ-BIC-Datei (blzToBics.json) auswählen:</b></p>
+        <input type="file" accept=".json" onChange={onBlzFileChange} />
 
-      <p>
-        Bitte eine Excel-Datei mit den Tabellen <strong>"Überweisungen"</strong> und <strong>"Konfiguration"</strong> auswählen:
-      </p>
-      <input type="file" accept=".xlsx" onChange={onExcelFileChange} />
+        <p>
+          Bitte eine Excel-Datei mit den Tabellen <strong>"Überweisungen"</strong> und <strong>"Konfiguration"</strong> auswählen:
+        </p>
+        <input type="file" accept=".xlsx" onChange={onExcelFileChange} />
 
-      <p>Optional: Vorhandene XML-Datei laden für PDF-Protokoll:</p>
-      <input type="file" accept=".xml" onChange={onXmlFileChange} />
+        <p>Optional: Vorhandene XML-Datei laden für PDF-Protokoll:</p>
+        <input type="file" accept=".xml" onChange={onXmlFileChange} />
 
-      <div style={{ margin: "1em 0" }}>
-        <button onClick={handleGenerateXML}>XML generieren</button>
-        <button disabled>XML herunterladen</button>
-        <button disabled>PDF-Protokoll</button>
-        <button disabled>PDF aus XML</button>
-        <button disabled>XML formatieren (ZKA3.8)</button>
+        <div className="button-row">
+          <button onClick={handleGenerateXML}>XML generieren</button>
+          <button onClick={() => downloadXML(xmlOutput, showNotification)}>
+            XML herunterladen
+          </button>
+          <PDFButton totalAmount={totalAmount} showNotification={showNotification} />
+          <button disabled>PDF aus XML</button>
+          <button onClick={handleFormatXML}>XML formatiert</button>
+        </div>
+
+        <h2>Generiertes XML:</h2>
+        <textarea value={xmlOutput} readOnly style={{ width: "100%", height: "300px", whiteSpace: "pre", fontFamily: "monospace", marginBottom: "1em" }} />
+
+        {message && <div style={{ whiteSpace: "pre", color: "darkred", marginTop: "1em" }}>{message}</div>}
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification({message: ''})}
+        />
       </div>
-
-      <h2>Generiertes XML:</h2>
-      <textarea value={xmlOutput} readOnly style={{ width: "100%", height: "300px", whiteSpace: "pre", fontFamily: "monospace", marginBottom: "1em" }} />
-
-      {message && <div style={{ whiteSpace: "pre", color: "darkred", marginTop: "1em" }}>{message}</div>}
-    </div>
+    </DataProvider>
   );
 };
 
 export default App;
+
+declare global {
+  interface Window {
+    vkbeautifyforZKA38: any;
+  }
+}
+
+// Beispiel für die Nutzung von showNotification in App:
+// generatePDF(totalAmount, showNotification);
+// generateXML(showNotification);
+// generatePDFFromXML(showNotification);
+// downloadXML(xmlOutput, showNotification);

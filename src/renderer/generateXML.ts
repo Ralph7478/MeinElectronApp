@@ -1,6 +1,12 @@
-// generateXML.ts - 100% ZKA 3.8-konform, keine Einrückung, alle Tags nach pain.001.001.09
+// generateXML.ts Version 7 - Verbesserte & ZKA 3.8-konforme Version
+import { useDataContext } from './DataContext';
+declare global {
+  interface Window {
+    vkbeautifyforZKA38: any;
+  }
+}
 
-export function getLocalISODateTimeString(): string {
+function getLocalISODateTimeString() {
   const date = new Date();
   const tzDate = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
   const pad = (n: number) => n.toString().padStart(2, '0');
@@ -16,49 +22,41 @@ export function getLocalISODateTimeString(): string {
   );
 }
 
-export function generateXML(
-  workbookData: any[],
-  configData: any,
-  outputElementId: string = 'xmlOutput'
-): void {
+export function generateXML(showNotification?: (msg: string, type?: 'error'|'info'|'success'|'warning') => void, setXmlOutput?: (xml: string) => void) {
+  const { workbookData, configData } = useDataContext();
   if (!Array.isArray(workbookData) || !configData) {
-    alert('Bitte Excel-Datei zuerst laden.');
+    showNotification && showNotification('Bitte Excel-Datei zuerst laden.', 'error');
     return;
   }
 
-  const validRows = workbookData.filter((row: any) => {
+  const validRows = workbookData.filter(row => {
     let betrag = parseFloat(String(row.Betrag).replace(',', '.'));
     return !isNaN(betrag) && betrag > 0;
   });
 
   if (validRows.length !== workbookData.length) {
-    alert("Fehler: Es sind Überweisungen mit Betrag 0,00, N/A oder leer enthalten. Korrigiere die Datei!");
+    showNotification && showNotification('Fehler: Es sind Überweisungen mit Betrag 0,00, N/A oder leer enthalten. Korrigiere die Datei!', 'error');
     return;
   }
   if (!validRows.length) {
-    alert("Keine gültigen Überweisungen gefunden.");
+    showNotification && showNotification('Keine gültigen Überweisungen gefunden.', 'error');
     return;
   }
 
   const NS = "urn:iso:std:iso:20022:tech:xsd:pain.001.001.09";
   const xmlDoc = document.implementation.createDocument(NS, "", null);
 
-  // <Document>
   const root = xmlDoc.createElementNS(NS, "Document");
-  root.setAttributeNS(
-    "http://www.w3.org/2001/XMLSchema-instance",
-    "xsi:schemaLocation",
-    "urn:iso:std:iso:20022:tech:xsd:pain.001.001.09 pain.001.001.09.zka38.xsd"
-  );
+  root.setAttributeNS("http://www.w3.org/2001/XMLSchema-instance", "xsi:schemaLocation",
+    "urn:iso:std:iso:20022:tech:xsd:pain.001.001.09 pain.001.001.09.zka38.xsd");
   xmlDoc.appendChild(root);
 
-  // <CstmrCdtTrfInitn>
   const CstmrCdtTrfInitn = xmlDoc.createElementNS(NS, "CstmrCdtTrfInitn");
   root.appendChild(CstmrCdtTrfInitn);
 
   // --- Group Header ---
   CstmrCdtTrfInitn.appendChild(
-    create(xmlDoc, NS, "GrpHdr", [
+    create("GrpHdr", [
       ["MsgId", configData.MSGID || "MSGID_MISSING"],
       ["CreDtTm", getLocalISODateTimeString()],
       ["NbOfTxs", validRows.length.toString()],
@@ -69,7 +67,7 @@ export function generateXML(
 
   // --- Payment Information ---
   CstmrCdtTrfInitn.appendChild(
-    create(xmlDoc, NS, "PmtInf", [
+    create("PmtInf", [
       ["PmtInfId", configData.MSGID || "MSGID_MISSING"],
       ["PmtMtd", "TRF"],
       ["BtchBookg", "true"],
@@ -81,11 +79,11 @@ export function generateXML(
       ["DbtrAcct", [["Id", [["IBAN", configData.AuftraggeberIBAN || "IBAN_FEHLT"]]]]],
       ["DbtrAgt", [["FinInstnId", [["BICFI", configData.AuftraggeberBIC || "NOTPROVIDED"]]]]],
       ["ChrgBr", "SLEV"],
-      ...validRows.map((row: any, i: number) => {
+      ...validRows.map((row, i) => {
         const betrag = parseFloat(String(row.Betrag).replace(',', '.')).toFixed(2);
         return [
           "CdtTrfTxInf", [
-            ["PmtId", [["EndToEndId", row.EndToEndId || `ID${i + 1}`]]],
+            ["PmtId", [["EndToEndId", row.EndToEndId || "ID" + (i + 1)]]],
             ["Amt", [["InstdAmt", betrag, { Ccy: "EUR" }]]],
             ...(row.BIC
               ? [["CdtrAgt", [["FinInstnId", [["BICFI", row.BIC.trim()]]]]]]
@@ -101,13 +99,7 @@ export function generateXML(
   );
 
   // --- Hilfsfunktionen ---
-  function create(
-    xmlDoc: XMLDocument,
-    NS: string,
-    name: string,
-    childrenOrText: any = "",
-    attrs: Record<string, any> = {}
-  ): Element {
+  function create(name: string, childrenOrText: any = "", attrs: Record<string, string> = {}) {
     const el = xmlDoc.createElementNS(NS, name);
     if (typeof childrenOrText === "string") {
       el.textContent = childrenOrText;
@@ -117,7 +109,7 @@ export function generateXML(
           el.appendChild(xmlDoc.createTextNode(child));
         } else if (Array.isArray(child)) {
           const [subName, subValue, subAttrs = {}] = child;
-          const childEl = create(xmlDoc, NS, subName, subValue, subAttrs);
+          const childEl = create(subName, subValue, subAttrs);
           el.appendChild(childEl);
         }
       });
@@ -126,24 +118,48 @@ export function generateXML(
     return el;
   }
 
-  function getTotalAmount(rows: any[]): number {
-    return rows.reduce((sum: number, row: any) => sum + parseFloat(String(row.Betrag).replace(',', '.')), 0);
+  function getTotalAmount(rows: any[]) {
+    return rows.reduce((sum, row) => sum + parseFloat(String(row.Betrag).replace(',', '.')), 0);
   }
 
-  function getExecutionDate(rows: any[]): string {
+  function getExecutionDate(rows: any[]) {
     let val = rows[0]?.Valuta;
     if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
     return new Date().toISOString().slice(0, 10);
   }
 
-  // --- Ausgabe ins Textfeld, keine Einrückung ---
-  let xmlString = new XMLSerializer().serializeToString(xmlDoc);
-
-  // Entferne jegliche Einrückung (alle Zeilenumbrüche und Tabs)
-  xmlString = xmlString.replace(/>\s+</g, '><');
-
-  const outputEl = document.getElementById(outputElementId) as HTMLTextAreaElement | null;
-  if (outputEl) {
-    outputEl.value = xmlString;
+  // --- Ausgabe ins Textfeld (ZKA 3.8-konform!) ---
+  const xmlString = new XMLSerializer().serializeToString(xmlDoc);
+  if (setXmlOutput) {
+    setXmlOutput(
+      (window.vkbeautifyforZKA38 && typeof window.vkbeautifyforZKA38.xml === "function")
+        ? window.vkbeautifyforZKA38.xml(xmlString)
+        : xmlString
+    );
   }
+}
+
+export function formatXmlZka38(xml: string, showNotification?: (msg: string, type?: 'error'|'info'|'success'|'warning') => void) {
+  if (window.vkbeautifyforZKA38 && typeof window.vkbeautifyforZKA38.xml_zka38 === "function") {
+    return window.vkbeautifyforZKA38.xml_zka38(xml);
+  } else {
+    showNotification && showNotification("vkbeautifyforZKA38.js nicht geladen oder Funktion nicht vorhanden!", 'error');
+    return xml;
+  }
+}
+
+export function downloadXML(xmlContent: string, showNotification?: (msg: string, type?: 'error'|'info'|'success'|'warning') => void) {
+  if (!xmlContent) {
+    showNotification && showNotification('Kein XML zum Speichern vorhanden.', 'error');
+    return;
+  }
+  const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'pain.001.001.09.xml';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }

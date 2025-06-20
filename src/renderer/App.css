@@ -1,0 +1,82 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.responsive-app {
+  box-sizing: border-box;
+  min-height: 100vh;
+  min-width: 100vw;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 1vw 1vw 0 1vw;
+  font-size: 1.2vw;
+  background: #f9f9f9;
+  color: #333;
+}
+
+.responsive-app h1 {
+  font-size: 2.2vw;
+  margin: 0.5vw 0 1vw 0;
+}
+
+.responsive-app input[type="file"] {
+  font-size: 1vw;
+  margin-bottom: 0.5vw;
+}
+
+.responsive-app button {
+  font-size: 1vw;
+  margin: 0.2vw 0.2vw 0.2vw 0;
+  padding: 0.4vw 1vw;
+  min-width: 7vw;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.responsive-app .button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5vw;
+  margin-bottom: 1vw;
+}
+
+.responsive-app textarea {
+  width: 100%;
+  min-height: 20vh;
+  max-height: 30vh;
+  font-size: 1vw;
+  font-family: monospace;
+  box-sizing: border-box;
+  margin-bottom: 1vw;
+}
+
+@media (max-width: 600px) {
+  .responsive-app {
+    font-size: 3vw;
+    padding: 2vw 2vw 0 2vw;
+  }
+  .responsive-app h1 {
+    font-size: 5vw;
+  }
+  .responsive-app button, .responsive-app input[type="file"] {
+    font-size: 3vw;
+    min-width: 30vw;
+    padding: 1vw 2vw;
+  }
+  .responsive-app .button-row {
+    gap: 1vw;
+  }
+  .responsive-app textarea {
+    font-size: 2vw;
+    min-height: 10vh;
+    max-height: 20vh;
+  }
+}

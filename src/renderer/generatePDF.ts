@@ -1,15 +1,16 @@
+//generatePDF.ts
+import { useDataContext } from './DataContext';
 import pdfMake from "pdfmake/build/pdfmake";
-import "pdfmake/build/vfs_fonts";
 
-export function formatEuro(value: string | number): string {
+function formatEuro(value) {
   let num = parseFloat(String(value).replace(',', '.'));
   if (isNaN(num)) num = 0;
   return num.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-export function formatGermanDateTime(dateString: string | Date): string {
+function formatGermanDateTime(dateString) {
   let date = typeof dateString === "string" ? new Date(dateString) : dateString;
-  const pad = (n: number) => n.toString().padStart(2, '0');
+  const pad = n => n.toString().padStart(2, '0');
   return (
     pad(date.getDate()) + '.' +
     pad(date.getMonth() + 1) + '.' +
@@ -20,9 +21,9 @@ export function formatGermanDateTime(dateString: string | Date): string {
   );
 }
 
-export function formatGermanDate(dateString: string | Date): string {
+function formatGermanDate(dateString) {
   let date = typeof dateString === "string" ? new Date(dateString) : dateString;
-  const pad = (n: number) => n.toString().padStart(2, '0');
+  const pad = n => n.toString().padStart(2, '0');
   return (
     pad(date.getDate()) + '.' +
     pad(date.getMonth() + 1) + '.' +
@@ -30,96 +31,82 @@ export function formatGermanDate(dateString: string | Date): string {
   );
 }
 
-export function splitVerwendungszweck(text: string): string {
+function splitVerwendungszweck(text) {
   if (!text) return "";
-  text = text.slice(0, 140);
-  if (text.length <= 70) return text;
-  let idx = text.lastIndexOf(' ', 70);
-  if (idx === -1) idx = 70;
+  text = text.slice(0, 140); // maximal 140 Zeichen
+  const maxLength = 70;
+  if (text.length <= maxLength) return text;
+
+  let idx = text.lastIndexOf(' ', maxLength);
+  if (idx === -1) idx = maxLength;
   return text.slice(0, idx) + '\n' + text.slice(idx).trim();
 }
 
-type WorkbookRow = {
-  Empfaenger?: string;
-  IBAN?: string;
-  BIC?: string;
-  Verwendungszweck?: string;
-  EndToEndId?: string;
-  Betrag?: string | number;
-  Valuta?: string;
-};
+function formatEndToEndId(text) {
+  return text ? text.slice(0, 35) : '';
+}
 
-type ConfigData = {
-  MSGID?: string;
-  AuftraggeberName?: string;
-  AuftraggeberIBAN?: string;
-  AuftraggeberBIC?: string;
-};
-
-export function generatePDF(
-  workbookData: WorkbookRow[],
-  configData: ConfigData,
-  totalAmount: number
-): void {
+export function generatePDF(totalAmount?: number, showNotification?: (msg: string, type?: 'error'|'info'|'success'|'warning') => void) {
+  const { workbookData, configData } = useDataContext();
   if (!workbookData || !configData) {
-    alert('Bitte Excel-Datei zuerst laden.');
+    showNotification && showNotification('Bitte Excel-Datei zuerst laden.', 'error');
     return;
   }
 
   const msgId = configData.MSGID || '';
   const creDtTm = new Date();
   const valutaDate = (workbookData[0] && workbookData[0].Valuta)
-    ? formatGermanDate(workbookData[0].Valuta!)
+    ? formatGermanDate(workbookData[0].Valuta)
     : formatGermanDate(new Date());
 
   const header = [
-    { text: 'Erfassungsprotokoll: Zahlung', style: 'header', margin: [0, 0, 0, 5] },
+    { text: 'Erfassungsprotokoll: Zahlungen', style: 'header', margin: [0, 0, 0, 5] },
     { text: `Sammler: ${msgId}`, style: 'subheader', margin: [0, 0, 0, 1] },
     { text: `Erfassung: ${formatGermanDateTime(creDtTm)}`, style: 'subheader', margin: [0, 0, 0, 1] },
     { text: `Valuta: ${valutaDate}`, style: 'valuta', margin: [0, 0, 0, 1] },
     { text: `Auftraggeber: ${configData.AuftraggeberName || ''}`, style: 'meta', margin: [0, 0, 0, 1] },
     { text: `IBAN: ${configData.AuftraggeberIBAN || ''}`, style: 'meta', margin: [0, 0, 0, 1] },
-    { text: `BIC: ${configData.AuftraggeberBIC || ''}`, style: 'meta', margin: [0, 0, 0, 1] },
-    { text: `Summe: ${formatEuro(totalAmount)} EUR   •   Überweisungen: ${workbookData.length}`, style: 'meta', margin: [0, 0, 0, 8] }
+    { text: `BIC: ${configData.AuftraggeberBIC || ''}`, style: 'meta', margin: [0, 0, 0, 8] },
   ];
 
-  const tableBody: any[] = [
+  const tableBody = [
     [
       { text: 'Nr.', style: 'tableHeader' },
-      { text: 'Empfänger', style: 'tableHeader' },
-      { text: 'IBAN', style: 'tableHeader' },
+      { text: 'Empfänger & IBAN', style: 'tableHeader' },
       { text: 'Verwendungszweck', style: 'tableHeader' },
       { text: 'EndToEndId', style: 'tableHeader' },
-      { text: 'Betrag', style: 'tableHeader', alignment: 'right', margin: [0,0,12,0]  }
+      { text: 'Betrag', style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] }
     ]
   ];
 
   workbookData.forEach((row, i) => {
+    const empfaenger = row.Empfaenger?.trim() || '';
+    const iban = row.IBAN?.trim() || '';
+    const bic = row.BIC?.trim() || '';
+    const empfaengerIbanText = empfaenger + '\n' + iban + (bic ? ' ' + bic : '');
+
     tableBody.push([
       { text: (i + 1).toString(), style: 'tableCell' },
-      { text: row.Empfaenger || '', style: 'tableCell' },
-      { text: row.IBAN ? (row.BIC ? (row.IBAN + '\n' + row.BIC) : row.IBAN) : '', style: 'tableCell' },
+      { text: empfaengerIbanText, style: 'tableCell' },
       { text: splitVerwendungszweck(row.Verwendungszweck || ''), style: 'vwzCell' },
-      { text: row.EndToEndId || '', style: 'tableCell' },
-      { text: formatEuro(row.Betrag ?? 0), style: 'tableCell', alignment: 'right', margin: [0,0,12,0] }
+      { text: formatEndToEndId(row.EndToEndId || ''), style: 'tableCell' },
+      { text: formatEuro(row.Betrag), style: 'tableCell', alignment: 'right', margin: [0,0,12,0] }
     ]);
   });
 
-  // Summenzeile
   tableBody.push([
-    { text: '', style: 'tableCell' },
-    { text: '', style: 'tableCell' },
-    { text: '', style: 'tableCell' },
-    { text: '', style: 'tableCell' },
-    { text: 'Summe:', style: 'tableHeader', alignment: 'right' },
+    { text: '', style: 'tableHeader' },
+    { text: '', style: 'tableHeader' },
+    { text: '', style: 'tableHeader' },
+    { text: 'Summe:', style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] },
     { text: formatEuro(totalAmount), style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] }
   ]);
 
-  const docDefinition: any = {
+  const docDefinition = {
     pageOrientation: 'landscape',
     pageSize: 'A4',
-    pageMargins: [18, 14, 18, 25],
-    footer: function(currentPage: number, pageCount: number) {
+    pageMargins: [18, 30, 18, 25],
+    footer: function(currentPage, pageCount) {
       return {
         columns: [
           { text: `Erstellt: ${formatGermanDateTime(creDtTm)}`, alignment: 'left', fontSize: 7, margin: [4, 0, 0, 0] },
@@ -134,7 +121,7 @@ export function generatePDF(
       {
         table: {
           headerRows: 1,
-          widths: [22, 95, 110, 254, 140, 101],
+          widths: [22, 150, 210, 90, 101],
           body: tableBody
         },
         layout: 'lightHorizontalLines'
@@ -142,7 +129,7 @@ export function generatePDF(
     ],
     styles: {
       header: { fontSize: 12, bold: true },
-      subheader: { fontSize: 9, bold: false },
+      subheader: { fontSize: 9 },
       valuta: { fontSize: 8, bold: true },
       meta: { fontSize: 8, color: '#555' },
       tableHeader: { bold: true, fillColor: '#eeeeee', fontSize: 9 },
