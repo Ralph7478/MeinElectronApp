@@ -135,6 +135,7 @@ export function generateXML(workbookData: any[], configData: any, showNotificati
         : xmlString
     );
   }
+  if (showNotification) showNotification('XML erfolgreich generiert!', 'success');
 }
 
 export function formatXmlZka38(xml: string, showNotification?: (msg: string, type?: 'error'|'info'|'success'|'warning') => void) {

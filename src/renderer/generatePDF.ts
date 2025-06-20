@@ -1,5 +1,7 @@
 //generatePDF.ts
 import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 function formatEuro(value) {
   let num = parseFloat(String(value).replace(',', '.'));
@@ -45,7 +47,7 @@ function formatEndToEndId(text) {
   return text ? text.slice(0, 35) : '';
 }
 
-export function generatePDF(workbookData: any[], configData: any, totalAmount?: number, showNotification?: (msg: string, type?: 'error'|'info'|'success'|'warning') => void) {
+export function generatePDF(workbookData: any[], configData: any, totalAmount?: number, showNotification?: (msg: string, type?: 'error'|'info'|'success'|'warning') => void, action: 'anzeigen' | 'herunterladen' = 'herunterladen') {
   if (!workbookData || !configData) {
     showNotification && showNotification('Bitte Excel-Datei zuerst laden.', 'error');
     return;
@@ -136,5 +138,11 @@ export function generatePDF(workbookData: any[], configData: any, totalAmount?: 
     }
   };
 
-  pdfMake.createPdf(docDefinition).download(`Erfassungsprotokoll_${msgId}.pdf`);
+  if (action === 'anzeigen') {
+    pdfMake.createPdf(docDefinition).open();
+    showNotification && showNotification('PDF wird angezeigt.', 'success');
+  } else {
+    pdfMake.createPdf(docDefinition).download(`Erfassungsprotokoll_${msgId}.pdf`);
+    showNotification && showNotification('PDF-Download gestartet.', 'success');
+  }
 }

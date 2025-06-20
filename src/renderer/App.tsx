@@ -71,9 +71,11 @@ const App: React.FC = () => {
       try {
         setBlzToBics(JSON.parse(event.target?.result as string));
         setMessage("blzToBics.json erfolgreich geladen!");
+        showNotification('BLZ-BIC-Datei erfolgreich geladen!', 'success');
       } catch {
         setBlzToBics({});
         setMessage("Fehler beim Parsen der blzToBics.json!");
+        showNotification('Fehler beim Parsen der BLZ-BIC-Datei!', 'error');
       }
     };
     reader.readAsText(file);
@@ -91,6 +93,7 @@ const App: React.FC = () => {
         setConfigData(null);
         setTotalAmount(0);
         setMessage("Excel-Datei muss die Tabellen 'Überweisungen' und 'Konfiguration' enthalten.");
+        showNotification('Excel-Datei unvollständig: "Überweisungen" oder "Konfiguration" fehlt.', 'error');
         e.target.value = "";
         return;
       }
@@ -99,6 +102,7 @@ const App: React.FC = () => {
         setConfigData(null);
         setTotalAmount(0);
         setMessage("Bitte zuerst die blzToBics.json laden!");
+        showNotification('Bitte zuerst die BLZ-BIC-Datei laden!', 'error');
         e.target.value = "";
         return;
       }
@@ -213,6 +217,7 @@ const App: React.FC = () => {
         return sum + (isNaN(betrag) ? 0 : betrag);
       }, 0);
       setTotalAmount(total);
+      showNotification('Excel-Datei erfolgreich geladen!', 'success');
 
       setMessage(
         'Datei geladen: ' +
@@ -246,20 +251,26 @@ const App: React.FC = () => {
         ) {
           setXmlDoc(null);
           setMessage('Ungültige oder fehlerhafte XML-Datei.');
+          showNotification('Ungültige oder fehlerhafte XML-Datei.', 'error');
           return;
         }
         setXmlDoc(parsed);
         setMessage('XML-Datei geladen.');
+        showNotification('XML-Datei erfolgreich geladen!', 'success');
       } catch (err) {
         setXmlDoc(null);
         setMessage('Fehler beim Parsen der XML-Datei!');
+        showNotification('Fehler beim Parsen der XML-Datei!', 'error');
       }
     };
     reader.readAsText(file);
   };
 
   const handleGenerateXML = () => {
-    generateXML(workbookData, configData, showNotification, setXmlOutput);
+    generateXML(workbookData, configData, (msg, type) => {
+      showNotification(msg, type);
+      if (type !== 'error') showNotification('XML erfolgreich generiert!', 'success');
+    }, setXmlOutput);
   };
 
   const handleFormatXML = () => {
@@ -269,8 +280,10 @@ const App: React.FC = () => {
       const formatted = window.vkbeautifyforZKA38.xml_zka38(xmlText);
       setXmlOutput(formatted);
       setMessage('XML formatiert (ZKA3.8)');
+      showNotification('XML formatiert (ZKA3.8)', 'success');
     } else {
       setMessage('vkbeautifyforZKA38 nicht geladen!');
+      showNotification('vkbeautifyforZKA38 nicht geladen!', 'error');
     }
   };
 

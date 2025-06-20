@@ -1,4 +1,6 @@
 import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 function formatEuro(value) {
   let num = parseFloat(String(value).replace(',', '.'));
@@ -169,4 +171,5 @@ export function generatePDFFromXML(xmlString: string, showNotification?: (msg: s
   };
 
   pdfMake.createPdf(docDefinition).download(`Erfassungsprotokoll_${getXMLText(grpHdr, 'MsgId') || 'AUS_XML'}.pdf`);
+  if (showNotification) showNotification('PDF-Download aus XML gestartet.', 'success');
 }
