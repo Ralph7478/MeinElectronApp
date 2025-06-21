@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 
 // Props: Passe die Typen ggf. an deine Datenstruktur an!
 interface PDFButtonProps {
@@ -6,11 +6,10 @@ interface PDFButtonProps {
   configData: any;
   totalAmount: number;
   showNotification?: (msg: string, type?: 'error'|'info'|'success'|'warning') => void;
+  action: 'anzeigen' | 'herunterladen';
 }
 
-const PDFButton: React.FC<PDFButtonProps> = ({ workbookData, configData, totalAmount, showNotification }) => {
-  const [action, setAction] = useState<'anzeigen' | 'herunterladen'>('herunterladen');
-
+const PDFButton: React.FC<PDFButtonProps> = ({ workbookData, configData, totalAmount, showNotification, action }) => {
   const handlePDF = async () => {
     // Dynamischer Import: PDF-Code und pdfmake werden nur jetzt geladen!
     const { generatePDF } = await import("../renderer/generatePDF");
@@ -22,10 +21,6 @@ const PDFButton: React.FC<PDFButtonProps> = ({ workbookData, configData, totalAm
       <button onClick={handlePDF}>
         PDF {action === 'anzeigen' ? 'anzeigen' : 'herunterladen'}
       </button>
-      <select value={action} onChange={e => setAction(e.target.value as 'anzeigen' | 'herunterladen')} style={{ height: 28 }}>
-        <option value="herunterladen">Herunterladen</option>
-        <option value="anzeigen">Anzeigen</option>
-      </select>
     </span>
   );
 };

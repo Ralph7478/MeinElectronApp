@@ -54,6 +54,7 @@ const App: React.FC = () => {
   const [blzToBics, setBlzToBics] = useState<Record<string, any>>({});
   const [xmlOutput, setXmlOutput] = useState<string>("");
   const [notification, setNotification] = useState<{message: string, type?: 'error'|'info'|'success'|'warning'}>({message: ''});
+  const [pdfAction, setPdfAction] = useState<'anzeigen' | 'herunterladen'>('herunterladen');
 
   const showNotification = (message: string, type: 'error'|'info'|'success'|'warning' = 'info') => {
     setNotification({ message, type });
@@ -311,8 +312,12 @@ const App: React.FC = () => {
         }}>
           XML herunterladen
         </button>
-        <PDFButton workbookData={workbookData} configData={configData} totalAmount={totalAmount} showNotification={showNotification} />
-        <button onClick={() => generatePDFFromXML(xmlOutput, showNotification)}>PDF aus XML</button>
+        <PDFButton workbookData={workbookData} configData={configData} totalAmount={totalAmount} showNotification={showNotification} action={pdfAction} />
+        <button onClick={() => generatePDFFromXML(xmlOutput, showNotification, pdfAction)}>PDF aus XML</button>
+        <select value={pdfAction} onChange={e => setPdfAction(e.target.value as 'anzeigen' | 'herunterladen')} style={{ height: 28 }}>
+          <option value="herunterladen">Herunterladen</option>
+          <option value="anzeigen">Anzeigen</option>
+        </select>
         <button onClick={handleFormatXML}>XML formatiert</button>
       </div>
 
