@@ -268,8 +268,11 @@ const App: React.FC = () => {
 
   const handleGenerateXML = () => {
     generateXML(workbookData, configData, (msg, type) => {
-      showNotification(msg, type);
-      if (type !== 'error') showNotification('XML erfolgreich generiert!', 'success');
+      if (msg) {
+        showNotification(msg, type);
+      } else if (!type || type === 'success') {
+        showNotification('XML erfolgreich generiert!', 'success');
+      }
     }, setXmlOutput);
   };
 
@@ -293,6 +296,7 @@ const App: React.FC = () => {
         message={notification.message}
         type={notification.type}
         onClose={() => setNotification({message: ''})}
+        aria-live="polite"
       />
       <h1>ZKA 3.8 SEPA Sammelüberweisung</h1>
 
@@ -309,7 +313,10 @@ const App: React.FC = () => {
 
       <div className="button-row">
         <button onClick={handleGenerateXML}>XML generieren</button>
-        <button onClick={() => downloadXML(xmlOutput, showNotification)}>
+        <button onClick={() => {
+          downloadXML(xmlOutput, showNotification);
+          showNotification('XML-Download gestartet.', 'info');
+        }}>
           XML herunterladen
         </button>
         <PDFButton workbookData={workbookData} configData={configData} totalAmount={totalAmount} showNotification={showNotification} />
@@ -320,7 +327,8 @@ const App: React.FC = () => {
       <h2>Generiertes XML:</h2>
       <textarea value={xmlOutput} readOnly style={{ width: "100%", height: "300px", whiteSpace: "pre", fontFamily: "monospace", marginBottom: "1em" }} />
 
-      {message && <div style={{ whiteSpace: "pre", color: "darkred", marginTop: "1em" }}>{message}</div>}
+      {/* Message area is now less prominent for a cleaner look */}
+      {message && <div style={{ whiteSpace: "pre", color: "#b71c1c", marginTop: "0.5em", fontSize: 12, opacity: 0.8 }}>{message}</div>}
     </div>
   );
 };

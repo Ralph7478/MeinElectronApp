@@ -1,3 +1,7 @@
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
+
 function formatEuro(value) {
   let num = parseFloat(String(value).replace(',', '.'));
   if (isNaN(num)) num = 0;
@@ -29,10 +33,9 @@ function formatGermanDate(dateString) {
 
 function splitVerwendungszweck(text) {
   if (!text) return "";
-  text = text.slice(0, 140);
+  text = text.slice(0, 140); // maximal 140 Zeichen
   const maxLength = 70;
   if (text.length <= maxLength) return text;
-
   let idx = text.lastIndexOf(' ', maxLength);
   if (idx === -1) idx = maxLength;
   return text.slice(0, idx) + '\n' + text.slice(idx).trim();
@@ -48,12 +51,18 @@ function getXMLText(parent, tag) {
   return el ? el.textContent.trim() : '';
 }
 
-function generatePDFFromXML() {
-  if (!xmlDoc) {
-    alert('Bitte XML-Datei zuerst laden.');
+export function generatePDFFromXML(xmlString: string, showNotification?: (msg: string, type?: 'error'|'info'|'success'|'warning') => void, action: 'anzeigen' | 'herunterladen' = 'herunterladen') {
+  if (!xmlString) {
+    showNotification && showNotification('Bitte XML-Datei zuerst laden.', 'error');
     return;
   }
-
+  let xmlDoc: Document;
+  try {
+    xmlDoc = new window.DOMParser().parseFromString(xmlString, "application/xml");
+  } catch (e) {
+    showNotification && showNotification('Fehler beim Parsen der XML-Datei.', 'error');
+    return;
+  }
   const grpHdr = xmlDoc.getElementsByTagName("GrpHdr")[0];
   const msgId = getXMLText(grpHdr, "MsgId");
   const creDtTm = getXMLText(grpHdr, "CreDtTm");
@@ -108,12 +117,10 @@ function generatePDFFromXML() {
     const vwz = getXMLText(tx.getElementsByTagName("RmtInf")[0], "Ustrd");
     const endToEndId = getXMLText(tx.getElementsByTagName("PmtId")[0], "EndToEndId");
     const betrag = getXMLText(tx, "InstdAmt");
-
     const empfaengerIbanText = empfaenger + '\n' + iban + (bic ? ' ' + bic : '');
-
     tableBody.push([
       { text: (i + 1).toString(), style: 'tableCell' },
-      { text: empfaengerIbanText, style: 'tableCell', lineHeight: 1.1 },
+      { text: empfaengerIbanText, style: 'tableCell' },
       { text: splitVerwendungszweck(vwz), style: 'vwzCell' },
       { text: formatEndToEndId(endToEndId), style: 'tableCell' },
       { text: formatEuro(betrag), style: 'tableCell', alignment: 'right', margin: [0,0,12,0] }
@@ -121,10 +128,10 @@ function generatePDFFromXML() {
   });
 
   tableBody.push([
-    { text: '', style: 'tableCell' },
-    { text: '', style: 'tableCell' },
-    { text: '', style: 'tableCell' },
-    { text: 'Summe:', style: 'tableHeader', alignment: 'right' },
+    { text: '', style: 'tableHeader' },
+    { text: '', style: 'tableHeader' },
+    { text: '', style: 'tableHeader' },
+    { text: 'Summe:', style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] },
     { text: formatEuro(summe), style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] }
   ]);
 
@@ -165,5 +172,11 @@ function generatePDFFromXML() {
     }
   };
 
-  pdfMake.createPdf(docDefinition).download(`Erfassungsprotokoll_${msgId || 'AUS_XML'}.pdf`);
+  if (action === 'anzeigen') {
+    pdfMake.createPdf(docDefinition).open();
+    showNotification && showNotification('PDF aus XML wird angezeigt.', 'success');
+  } else {
+    pdfMake.createPdf(docDefinition).download(`Erfassungsprotokoll_${msgId || 'AUS_XML'}.pdf`);
+    showNotification && showNotification('PDF-Download aus XML gestartet.', 'success');
+  }
 }
