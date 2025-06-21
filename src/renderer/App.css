@@ -1,9 +1,17 @@
+@font-face {
+  font-family: 'Roboto';
+  src: url('/fonts/Roboto-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
   width: 100vw;
   overflow: hidden;
+  font-family: 'Roboto', Arial, sans-serif;
 }
 
 .responsive-app {
