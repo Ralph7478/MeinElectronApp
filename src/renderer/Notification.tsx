@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { CSSProperties } from 'react';
 
 interface NotificationProps {
   message: string;
@@ -15,14 +15,28 @@ const getColor = (type: string) => {
   }
 };
 
+const getPosition = (type: string): CSSProperties => {
+  if (type === 'success') {
+    return {
+      position: 'fixed' as CSSProperties['position'],
+      left: 20,
+      bottom: 20,
+      zIndex: 9999
+    };
+  }
+  return {
+    position: 'fixed' as CSSProperties['position'],
+    top: 20,
+    right: 20,
+    zIndex: 9999
+  };
+};
+
 const Notification: React.FC<NotificationProps> = ({ message, type = 'info', onClose }) => {
   if (!message) return null;
   return (
     <div style={{
-      position: 'fixed',
-      top: 20,
-      right: 20,
-      zIndex: 9999,
+      ...getPosition(type),
       background: getColor(type),
       color: '#fff',
       padding: '1em 2em',

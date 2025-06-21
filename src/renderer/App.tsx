@@ -53,7 +53,6 @@ const App: React.FC = () => {
   const [xmlDoc, setXmlDoc] = useState<Document | null>(null);
   const [blzToBics, setBlzToBics] = useState<Record<string, any>>({});
   const [xmlOutput, setXmlOutput] = useState<string>("");
-  const [message, setMessage] = useState<string>("");
   const [notification, setNotification] = useState<{message: string, type?: 'error'|'info'|'success'|'warning'}>({message: ''});
 
   const showNotification = (message: string, type: 'error'|'info'|'success'|'warning' = 'info') => {
@@ -63,18 +62,16 @@ const App: React.FC = () => {
   const onBlzFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) {
-      setMessage("Bitte die blzToBics.json auswählen.");
+      showNotification("Bitte die blzToBics.json auswählen.", 'error');
       return;
     }
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         setBlzToBics(JSON.parse(event.target?.result as string));
-        setMessage("blzToBics.json erfolgreich geladen!");
         showNotification('BLZ-BIC-Datei erfolgreich geladen!', 'success');
       } catch {
         setBlzToBics({});
-        setMessage("Fehler beim Parsen der blzToBics.json!");
         showNotification('Fehler beim Parsen der BLZ-BIC-Datei!', 'error');
       }
     };
@@ -92,7 +89,6 @@ const App: React.FC = () => {
         setWorkbookData([]);
         setConfigData(null);
         setTotalAmount(0);
-        setMessage("Excel-Datei muss die Tabellen 'Überweisungen' und 'Konfiguration' enthalten.");
         showNotification('Excel-Datei unvollständig: "Überweisungen" oder "Konfiguration" fehlt.', 'error');
         e.target.value = "";
         return;
@@ -101,7 +97,6 @@ const App: React.FC = () => {
         setWorkbookData([]);
         setConfigData(null);
         setTotalAmount(0);
-        setMessage("Bitte zuerst die blzToBics.json laden!");
         showNotification('Bitte zuerst die BLZ-BIC-Datei laden!', 'error');
         e.target.value = "";
         return;
@@ -171,7 +166,7 @@ const App: React.FC = () => {
               setWorkbookData([]);
               setConfigData(null);
               setTotalAmount(0);
-              setMessage("Fehler in Zeile " + rowNum + ": BIC für SEPA-Ausland fehlerhaft. Import abgebrochen. Bitte korrigieren und Datei neu laden!");
+              showNotification("Fehler in Zeile " + rowNum + ": BIC für SEPA-Ausland fehlerhaft. Import abgebrochen. Bitte korrigieren und Datei neu laden!", 'error');
               e.target.value = "";
               return;
             }
@@ -192,21 +187,24 @@ const App: React.FC = () => {
         setWorkbookData([]);
         setConfigData(null);
         setTotalAmount(0);
-        setMessage("Fehler beim Prüfen der Datei:\n" + errors.join('\n') +
+        showNotification(
+          "Fehler beim Prüfen der Datei:\n" + errors.join('\n') +
           "\nKorrekte IBAN-Prüfziffern: " + ibanValidCount +
           "\nUngültige IBAN-Prüfziffern: " + ibanInvalidCount +
           "\nIBANs mit entfernten Leerzeichen (nur DE): " + ibanSpaceCleanedCount + 
           "\nEmpfaenger-Felder mit Umlautersetzung: " + umlautReplacedEmpfaengerCount +
-          "\nVerwendungszweck-Felder mit Umlautersetzung: " + umlautReplacedVwzCount
+          "\nVerwendungszweck-Felder mit Umlautersetzung: " + umlautReplacedVwzCount,
+          'error'
         );
         e.target.value = "";
         return;
       }
 
       if (bicCorrectedRows.length > 0) {
-        setMessage(
+        showNotification(
           "Hinweis: In folgenden Zeilen wurde die BIC entfernt und die Überweisung als IBANonly behandelt (nur DE):\n" +
-          bicCorrectedRows.join(', ')
+          bicCorrectedRows.join(', '),
+          'info'
         );
       }
 
@@ -217,9 +215,7 @@ const App: React.FC = () => {
         return sum + (isNaN(betrag) ? 0 : betrag);
       }, 0);
       setTotalAmount(total);
-      showNotification('Excel-Datei erfolgreich geladen!', 'success');
-
-      setMessage(
+      showNotification(
         'Datei geladen: ' +
         allRows.length +
         ' Überweisungen (IBAN/BIC geprüft, alle Beträge > 0,00)\n' +
@@ -230,7 +226,8 @@ const App: React.FC = () => {
         'Ungültige IBAN-Prüfziffern: ' + ibanInvalidCount + '\n' +
         'IBANs mit entfernten Leerzeichen (nur DE): ' + ibanSpaceCleanedCount + '\n' +
         'Empfaenger-Felder mit Umlautersetzung: ' + umlautReplacedEmpfaengerCount + '\n' +
-        'Verwendungszweck-Felder mit Umlautersetzung: ' + umlautReplacedVwzCount
+        'Verwendungszweck-Felder mit Umlautersetzung: ' + umlautReplacedVwzCount,
+        'success'
       );
     };
     reader.readAsArrayBuffer(file);
@@ -250,16 +247,13 @@ const App: React.FC = () => {
           !parsed.getElementsByTagName('Document').length
         ) {
           setXmlDoc(null);
-          setMessage('Ungültige oder fehlerhafte XML-Datei.');
           showNotification('Ungültige oder fehlerhafte XML-Datei.', 'error');
           return;
         }
         setXmlDoc(parsed);
-        setMessage('XML-Datei geladen.');
         showNotification('XML-Datei erfolgreich geladen!', 'success');
       } catch (err) {
         setXmlDoc(null);
-        setMessage('Fehler beim Parsen der XML-Datei!');
         showNotification('Fehler beim Parsen der XML-Datei!', 'error');
       }
     };
@@ -282,10 +276,8 @@ const App: React.FC = () => {
     if (window.vkbeautifyforZKA38 && typeof window.vkbeautifyforZKA38.xml_zka38 === 'function') {
       const formatted = window.vkbeautifyforZKA38.xml_zka38(xmlText);
       setXmlOutput(formatted);
-      setMessage('XML formatiert (ZKA3.8)');
       showNotification('XML formatiert (ZKA3.8)', 'success');
     } else {
-      setMessage('vkbeautifyforZKA38 nicht geladen!');
       showNotification('vkbeautifyforZKA38 nicht geladen!', 'error');
     }
   };
