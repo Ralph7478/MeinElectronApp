@@ -1,0 +1,2 @@
+Nächster Schritt:
+Soll ich alle alert()-Aufrufe durch ein modernes, zentrales Meldungssystem ersetzen und die Fehler/Hinweise im UI anzeigen? (z.B. als Snackbar oder als farbige Box oben/unten im Fenster)

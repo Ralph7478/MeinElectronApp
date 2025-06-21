@@ -1,7 +1,3 @@
-import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
-
 function formatEuro(value) {
   let num = parseFloat(String(value).replace(',', '.'));
   if (isNaN(num)) num = 0;
@@ -52,18 +48,12 @@ function getXMLText(parent, tag) {
   return el ? el.textContent.trim() : '';
 }
 
-export function generatePDFFromXML(xmlString: string, showNotification?: (msg: string, type?: 'error'|'info'|'success'|'warning') => void) {
-  if (!xmlString) {
-    showNotification && showNotification('Bitte XML-Datei zuerst laden.', 'error');
+function generatePDFFromXML() {
+  if (!xmlDoc) {
+    alert('Bitte XML-Datei zuerst laden.');
     return;
   }
-  let xmlDoc: Document;
-  try {
-    xmlDoc = new window.DOMParser().parseFromString(xmlString, "application/xml");
-  } catch (e) {
-    showNotification && showNotification('Fehler beim Parsen der XML-Datei.', 'error');
-    return;
-  }
+
   const grpHdr = xmlDoc.getElementsByTagName("GrpHdr")[0];
   const msgId = getXMLText(grpHdr, "MsgId");
   const creDtTm = getXMLText(grpHdr, "CreDtTm");
@@ -80,7 +70,7 @@ export function generatePDFFromXML(xmlString: string, showNotification?: (msg: s
   const dbtrAgt = pmtInf.getElementsByTagName("DbtrAgt")[0];
   const auftraggeberBIC = getXMLText(dbtrAgt, "BICFI");
 
-  const txList = Array.from(xmlDoc.getElementsByTagName("CdtTrfTxInf")) as Element[];
+  const txList = Array.from(xmlDoc.getElementsByTagName("CdtTrfTxInf"));
 
   let summe = 0;
   txList.forEach(tx => {
@@ -108,28 +98,33 @@ export function generatePDFFromXML(xmlString: string, showNotification?: (msg: s
     ]
   ];
 
-  txList.forEach((tx: Element, i: number) => {
+  txList.forEach((tx, i) => {
     const empfaenger = getXMLText(tx.getElementsByTagName("Cdtr")[0], "Nm");
     const iban = getXMLText(tx.getElementsByTagName("CdtrAcct")[0], "IBAN");
-    const bic = getXMLText(tx.getElementsByTagName("CdtrAgt")[0]?.getElementsByTagName("FinInstnId")[0], "BICFI");
+    const bic = getXMLText(
+      tx.getElementsByTagName("CdtrAgt")[0]?.getElementsByTagName("FinInstnId")[0],
+      "BICFI"
+    );
     const vwz = getXMLText(tx.getElementsByTagName("RmtInf")[0], "Ustrd");
     const endToEndId = getXMLText(tx.getElementsByTagName("PmtId")[0], "EndToEndId");
     const betrag = getXMLText(tx, "InstdAmt");
 
+    const empfaengerIbanText = empfaenger + '\n' + iban + (bic ? ' ' + bic : '');
+
     tableBody.push([
       { text: (i + 1).toString(), style: 'tableCell' },
-      { text: empfaenger + '\n' + iban + (bic ? ' ' + bic : ''), style: 'tableCell' },
-      { text: vwz, style: 'vwzCell' },
-      { text: endToEndId, style: 'tableCell' },
-      { text: '', style: 'tableCell', alignment: 'right', margin: [0,0,12,0] }
+      { text: empfaengerIbanText, style: 'tableCell', lineHeight: 1.1 },
+      { text: splitVerwendungszweck(vwz), style: 'vwzCell' },
+      { text: formatEndToEndId(endToEndId), style: 'tableCell' },
+      { text: formatEuro(betrag), style: 'tableCell', alignment: 'right', margin: [0,0,12,0] }
     ]);
   });
 
   tableBody.push([
-    { text: '', style: 'tableHeader' },
-    { text: '', style: 'tableHeader' },
-    { text: '', style: 'tableHeader' },
-    { text: 'Summe:', style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] },
+    { text: '', style: 'tableCell' },
+    { text: '', style: 'tableCell' },
+    { text: '', style: 'tableCell' },
+    { text: 'Summe:', style: 'tableHeader', alignment: 'right' },
     { text: formatEuro(summe), style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] }
   ]);
 
@@ -170,6 +165,5 @@ export function generatePDFFromXML(xmlString: string, showNotification?: (msg: s
     }
   };
 
-  pdfMake.createPdf(docDefinition).download(`Erfassungsprotokoll_${getXMLText(grpHdr, 'MsgId') || 'AUS_XML'}.pdf`);
-  if (showNotification) showNotification('PDF-Download aus XML gestartet.', 'success');
+  pdfMake.createPdf(docDefinition).download(`Erfassungsprotokoll_${msgId || 'AUS_XML'}.pdf`);
 }
