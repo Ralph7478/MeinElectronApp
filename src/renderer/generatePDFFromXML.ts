@@ -1,7 +1,3 @@
-import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
-
 function formatEuro(value) {
   let num = parseFloat(String(value).replace(',', '.'));
   if (isNaN(num)) num = 0;
@@ -52,7 +48,7 @@ function getXMLText(parent, tag) {
   return el ? el.textContent.trim() : '';
 }
 
-function generatePDFFromXML(xmlDoc) {
+function generatePDFFromXML() {
   if (!xmlDoc) {
     alert('Bitte XML-Datei zuerst laden.');
     return;
@@ -77,38 +73,9 @@ function generatePDFFromXML(xmlDoc) {
   const txList = Array.from(xmlDoc.getElementsByTagName("CdtTrfTxInf"));
 
   let summe = 0;
-  const tableBody = [
-    [
-      { text: 'Nr.', style: 'tableHeader', alignment: 'left' },
-      { text: 'Empfänger & IBAN', style: 'tableHeader', alignment: 'left' },
-      { text: 'Verwendungszweck', style: 'tableHeader', alignment: 'left' },
-      { text: 'EndToEndId', style: 'tableHeader', alignment: 'left' },
-      { text: 'Betrag', style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] }
-    ]
-  ];
-
-  txList.forEach((tx, i) => {
-    const txEl = tx as Element;
-    const empfaenger = getXMLText(txEl.getElementsByTagName("Cdtr")[0], "Nm");
-    const iban = getXMLText(txEl.getElementsByTagName("CdtrAcct")[0], "IBAN");
-    const bic = getXMLText(
-      txEl.getElementsByTagName("CdtrAgt")[0]?.getElementsByTagName("FinInstnId")[0],
-      "BICFI"
-    );
-    const vwz = getXMLText(txEl.getElementsByTagName("RmtInf")[0], "Ustrd");
-    const endToEndId = getXMLText(txEl.getElementsByTagName("PmtId")[0], "EndToEndId");
-    const betrag = getXMLText(txEl, "InstdAmt");
+  txList.forEach(tx => {
+    const betrag = getXMLText(tx, "InstdAmt");
     summe += parseFloat(betrag.replace(',', '.')) || 0;
-
-    const empfaengerIbanText = empfaenger + '\n' + iban + (bic ? ' ' + bic : '');
-
-    tableBody.push([
-      { text: (i + 1).toString(), style: 'tableCell', alignment: 'left', margin: [0,0,0,0] },
-      { text: empfaengerIbanText, style: 'tableCell', alignment: 'left', margin: [0,0,0,0] },
-      { text: splitVerwendungszweck(vwz), style: 'vwzCell', alignment: 'left', margin: [0,0,0,0] },
-      { text: formatEndToEndId(endToEndId), style: 'tableCell', alignment: 'left', margin: [0,0,0,0] },
-      { text: formatEuro(betrag), style: 'tableCell', alignment: 'right', margin: [0,0,12,0] }
-    ]);
   });
 
   const header = [
@@ -121,11 +88,43 @@ function generatePDFFromXML(xmlDoc) {
     { text: `BIC: ${auftraggeberBIC}`, style: 'meta', margin: [0, 0, 0, 8] }
   ];
 
+  const tableBody = [
+    [
+      { text: 'Nr.', style: 'tableHeader' },
+      { text: 'Empfänger & IBAN', style: 'tableHeader' },
+      { text: 'Verwendungszweck', style: 'tableHeader' },
+      { text: 'EndToEndId', style: 'tableHeader' },
+      { text: 'Betrag', style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] }
+    ]
+  ];
+
+  txList.forEach((tx, i) => {
+    const empfaenger = getXMLText(tx.getElementsByTagName("Cdtr")[0], "Nm");
+    const iban = getXMLText(tx.getElementsByTagName("CdtrAcct")[0], "IBAN");
+    const bic = getXMLText(
+      tx.getElementsByTagName("CdtrAgt")[0]?.getElementsByTagName("FinInstnId")[0],
+      "BICFI"
+    );
+    const vwz = getXMLText(tx.getElementsByTagName("RmtInf")[0], "Ustrd");
+    const endToEndId = getXMLText(tx.getElementsByTagName("PmtId")[0], "EndToEndId");
+    const betrag = getXMLText(tx, "InstdAmt");
+
+    const empfaengerIbanText = empfaenger + '\n' + iban + (bic ? ' ' + bic : '');
+
+    tableBody.push([
+      { text: (i + 1).toString(), style: 'tableCell' },
+      { text: empfaengerIbanText, style: 'tableCell', lineHeight: 1.1 },
+      { text: splitVerwendungszweck(vwz), style: 'vwzCell' },
+      { text: formatEndToEndId(endToEndId), style: 'tableCell' },
+      { text: formatEuro(betrag), style: 'tableCell', alignment: 'right', margin: [0,0,12,0] }
+    ]);
+  });
+
   tableBody.push([
-    { text: '', style: 'tableCell', alignment: 'left', margin: [0,0,0,0] },
-    { text: '', style: 'tableCell', alignment: 'left', margin: [0,0,0,0] },
-    { text: '', style: 'tableCell', alignment: 'left', margin: [0,0,0,0] },
-    { text: 'Summe:', style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] },
+    { text: '', style: 'tableCell' },
+    { text: '', style: 'tableCell' },
+    { text: '', style: 'tableCell' },
+    { text: 'Summe:', style: 'tableHeader', alignment: 'right' },
     { text: formatEuro(summe), style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] }
   ]);
 
@@ -168,5 +167,3 @@ function generatePDFFromXML(xmlDoc) {
 
   pdfMake.createPdf(docDefinition).download(`Erfassungsprotokoll_${msgId || 'AUS_XML'}.pdf`);
 }
-
-export { generatePDFFromXML };
