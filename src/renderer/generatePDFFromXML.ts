@@ -1,3 +1,7 @@
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
+
 function formatEuro(value) {
   let num = parseFloat(String(value).replace(',', '.'));
   if (isNaN(num)) num = 0;
@@ -42,13 +46,13 @@ function formatEndToEndId(text) {
   return text ? text.slice(0, 35) : '';
 }
 
-function getXMLText(parent, tag) {
+function getXMLText(parent: Element | null, tag: string): string {
   if (!parent) return "";
   const el = parent.getElementsByTagName(tag)[0];
-  return el ? el.textContent.trim() : '';
+  return el ? el.textContent?.trim() || '' : '';
 }
 
-function generatePDFFromXML() {
+function generatePDFFromXML(xmlDoc: Document) {
   if (!xmlDoc) {
     alert('Bitte XML-Datei zuerst laden.');
     return;
@@ -70,7 +74,7 @@ function generatePDFFromXML() {
   const dbtrAgt = pmtInf.getElementsByTagName("DbtrAgt")[0];
   const auftraggeberBIC = getXMLText(dbtrAgt, "BICFI");
 
-  const txList = Array.from(xmlDoc.getElementsByTagName("CdtTrfTxInf"));
+  const txList = Array.from(xmlDoc.getElementsByTagName("CdtTrfTxInf")) as Element[];
 
   let summe = 0;
   txList.forEach(tx => {
@@ -88,7 +92,7 @@ function generatePDFFromXML() {
     { text: `BIC: ${auftraggeberBIC}`, style: 'meta', margin: [0, 0, 0, 8] }
   ];
 
-  const tableBody = [
+  const tableBody: any[] = [
     [
       { text: 'Nr.', style: 'tableHeader' },
       { text: 'Empfänger & IBAN', style: 'tableHeader' },
@@ -112,19 +116,19 @@ function generatePDFFromXML() {
     const empfaengerIbanText = empfaenger + '\n' + iban + (bic ? ' ' + bic : '');
 
     tableBody.push([
-      { text: (i + 1).toString(), style: 'tableCell' },
-      { text: empfaengerIbanText, style: 'tableCell', lineHeight: 1.1 },
-      { text: splitVerwendungszweck(vwz), style: 'vwzCell' },
-      { text: formatEndToEndId(endToEndId), style: 'tableCell' },
+      { text: (i + 1).toString(), style: 'tableCell', margin: [0,0,0,0] },
+      { text: empfaengerIbanText, style: 'tableCell', margin: [0,0,0,0] },
+      { text: splitVerwendungszweck(vwz), style: 'vwzCell', margin: [0,0,0,0] },
+      { text: formatEndToEndId(endToEndId), style: 'tableCell', margin: [0,0,0,0] },
       { text: formatEuro(betrag), style: 'tableCell', alignment: 'right', margin: [0,0,12,0] }
     ]);
   });
 
   tableBody.push([
-    { text: '', style: 'tableCell' },
-    { text: '', style: 'tableCell' },
-    { text: '', style: 'tableCell' },
-    { text: 'Summe:', style: 'tableHeader', alignment: 'right' },
+    { text: '', style: 'tableCell', margin: [0,0,0,0] },
+    { text: '', style: 'tableCell', margin: [0,0,0,0] },
+    { text: '', style: 'tableCell', margin: [0,0,0,0] },
+    { text: 'Summe:', style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] },
     { text: formatEuro(summe), style: 'tableHeader', alignment: 'right', margin: [0,0,12,0] }
   ]);
 
@@ -132,7 +136,7 @@ function generatePDFFromXML() {
     pageOrientation: 'landscape',
     pageSize: 'A4',
     pageMargins: [18, 30, 18, 25],
-    footer: function(currentPage, pageCount) {
+    footer: function(currentPage: number, pageCount: number) {
       const now = new Date();
       return {
         columns: [
@@ -167,3 +171,5 @@ function generatePDFFromXML() {
 
   pdfMake.createPdf(docDefinition).download(`Erfassungsprotokoll_${msgId || 'AUS_XML'}.pdf`);
 }
+
+export { generatePDFFromXML };

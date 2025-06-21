@@ -1,5 +1,5 @@
 # Ignore everything in the .vscode directory...
-.vscode/*
+.vscode/
 my-assets/
 buildtools/
 node_modules/
