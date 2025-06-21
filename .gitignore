@@ -1,5 +1,4 @@
-buildtools
-node_modules
-dist
-build
-my-assets
+buildtools/
+node_modules/
+dist/
+build/
