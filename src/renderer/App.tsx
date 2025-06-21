@@ -327,8 +327,7 @@ const App: React.FC = () => {
       <h2>Generiertes XML:</h2>
       <textarea value={xmlOutput} readOnly style={{ width: "100%", height: "300px", whiteSpace: "pre", fontFamily: "monospace", marginBottom: "1em" }} />
 
-      {/* Message area is now less prominent for a cleaner look */}
-      {message && <div style={{ whiteSpace: "pre", color: "#b71c1c", marginTop: "0.5em", fontSize: 12, opacity: 0.8 }}>{message}</div>}
+      {/* Message area removed. All notifications are now only in the top-right Notification. */}
     </div>
   );
 };
